@@ -4,6 +4,7 @@ package com.example.kafka.poc.kafkapoc.consumer;
 import com.example.kafka.poc.kafkapoc.producer.RecordProducer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 @Component
@@ -28,7 +30,10 @@ public class RecordConsumer {
 
 
     public void consumerRecords(){
-        sampleKafkaConsumer.subscribe(Collections.singletonList("test"));
+        //sampleKafkaConsumer.subscribe(Collections.singletonList("test"));
+        TopicPartition partition = new TopicPartition("test", 0);
+        sampleKafkaConsumer.assign(Arrays.asList(partition));
+        sampleKafkaConsumer.seek(partition, 24);
 
         while (true){
             ConsumerRecords<String, String> records = sampleKafkaConsumer.poll(10000);
@@ -39,9 +44,15 @@ public class RecordConsumer {
                     LOG.info("Partition: {}, Offset: {}", record.partition(), record.offset());
                 });
             }
+            saveConsumerConfig(sampleKafkaConsumer, partition);
+            sampleKafkaConsumer.commitSync();
         }
 
 
 
+    }
+
+    private void saveConsumerConfig(KafkaConsumer<String, String> sampleKafkaConsumer, TopicPartition partition) {
+        LOG.info("Current offset is {}", sampleKafkaConsumer.position(partition));
     }
 }
